@@ -1,12 +1,11 @@
 #include "pacman.h"
 #include <QPixmap>
 
-
-PacMan::PacMan(QGraphicsScene* scene, int (*mapa)[19], int tileSize)
-    : QGraphicsPixmapItem(), scene(scene), mapa(mapa), TILE_SIZE(tileSize),
+PacMan::PacMan(QGraphicsScene* scene, int (*mapa)[19], Puntos* puntos, int tileSize)
+    : QGraphicsPixmapItem(), scene(scene), mapa(mapa), puntos(puntos), TILE_SIZE(tileSize),
     direccion(3), frame(0) {
 
-    spriteSheet.load(":/sprites/paccman.jpg"); // asegúrate de que esté en los recursos
+    spriteSheet.load(":/sprites/paccman.jpg");
 
     setFlag(QGraphicsItem::ItemIsFocusable);
     setFocus();
@@ -26,18 +25,51 @@ void PacMan::keyPressEvent(QKeyEvent *event) {
 void PacMan::mover() {
     int dx = 0, dy = 0;
     switch (direccion) {
-    case 0: dy = -TILE_SIZE; break;
-    case 1: dy = TILE_SIZE;  break;
-    case 2: dx = -TILE_SIZE; break;
-    case 3: dx = TILE_SIZE;  break;
+    case 0: dy = -TILE_SIZE; break;  // arriba
+    case 1: dy = TILE_SIZE;  break;  // abajo
+    case 2: dx = -TILE_SIZE; break;  // izquierda
+    case 3: dx = TILE_SIZE;  break;  // derecha
     }
 
-    if (puedeMoverse(dx, dy)) {
-        setPos(x() + dx, y() + dy);
-        frame = (frame + 1) % 3;
-        actualizarSprite();
+    int nuevaX = x() + dx;
+    int nuevaY = y() + dy;
+
+    int gridX = x() / TILE_SIZE;
+    int gridY = y() / TILE_SIZE;
+
+    const int filaTunel = 9;
+    const int columnaIzquierda = 0;
+    const int columnaDerecha = 18;
+
+    // 💡 Si estamos en la fila del túnel y nos vamos por el lado izquierdo
+    if (gridY == filaTunel && direccion == 2 && gridX == columnaIzquierda) {
+        setPos(columnaDerecha * TILE_SIZE, filaTunel * TILE_SIZE);
+    }
+    // 💡 Si estamos en la fila del túnel y nos vamos por el lado derecho
+    else if (gridY == filaTunel && direccion == 3 && gridX == columnaDerecha) {
+        setPos(columnaIzquierda * TILE_SIZE, filaTunel * TILE_SIZE);
+    }
+    // Movimiento normal si no es túnel
+    else if (puedeMoverse(dx, dy)) {
+        setPos(nuevaX, nuevaY);
+    } else {
+        return;  // No se puede mover
+    }
+
+    // Animación y sprite
+    frame = (frame + 1) % 3;
+    actualizarSprite();
+
+    // Eliminar punto si hay
+    int newGridX = x() / TILE_SIZE;
+    int newGridY = y() / TILE_SIZE;
+
+    if (puntos->eliminarPuntoEn(newGridX, newGridY)) {
+        emit puntoComido();
     }
 }
+
+
 
 bool PacMan::puedeMoverse(int dx, int dy) {
     int nuevaX = (x() + dx) / TILE_SIZE;
@@ -49,24 +81,7 @@ bool PacMan::puedeMoverse(int dx, int dy) {
     return mapa[nuevaY][nuevaX] != 1;
 }
 
-/*void PacMan::actualizarSprite() { //sprite bueno, pero aparece el fantasma a la derecha
-    int xOffset = 0;
-    int yOffset = 0;
-
-    switch (direccion) {
-    case 0: xOffset = frame * 32; yOffset = 0; break; // arriba
-    case 1: xOffset = (3 + frame) * 32; yOffset = 0; break; // abajo
-    case 2:
-        if (frame < 2) xOffset = (6 + frame) * 32, yOffset = 0;
-        else xOffset = 0, yOffset = 32;
-        break;
-    case 3: xOffset = (3 + frame) * 32; yOffset = 32; break; // derecha
-    }
-
-    setPixmap(spriteSheet.copy(xOffset, yOffset, 32, 32).scaled(TILE_SIZE, TILE_SIZE));
-}*/
-
-/*void PacMan::actualizarSprite() { //sprite bueno, pero aparece el fantasma a la derecha
+void PacMan::actualizarSprite() {
     int xOffset = 0;
     int yOffset = 0;
 
@@ -75,85 +90,24 @@ bool PacMan::puedeMoverse(int dx, int dy) {
         xOffset = frame * 32;
         yOffset = 0;
         break;
+
     case 1: // abajo
         xOffset = (3 + frame) * 32;
         yOffset = 0;
         break;
-    case 2: // izquierda
-        if (frame < 2)
-            xOffset = (6 + frame) * 32, yOffset = 0;
-        else
-            xOffset = 0, yOffset = 32; // boca cerrada mirando izquierda
-        break;
-    case 3: // ✅ derecha (corregido)
-        if (frame == 0) xOffset = 96;
-        else if (frame == 1) xOffset = 128;
-        else xOffset = 160;
-        yOffset = 32;
-        break;
-    }
-
-    setPixmap(spriteSheet.copy(xOffset, yOffset, 32, 32).scaled(TILE_SIZE, TILE_SIZE));
-}*/
-
-/*void PacMan::actualizarSprite() { solo funciona hacia arriba y hacia abjo
-    int xOffset = 0;
-    int yOffset = 0;
-
-    switch (direccion) {
-    case 0: // arriba
-        xOffset = frame * 32;      // sprites 0,1,2
-        yOffset = 0;
-        break;
-
-    case 1: // abajo
-        xOffset = (3 + frame) * 32;  // sprites 3,4,5
-        yOffset = 0;
-        break;
 
     case 2: // izquierda
-        if (frame == 0) { xOffset = 96; yOffset = 0; }      // medio abierta
-        else if (frame == 1) { xOffset = 112; yOffset = 0; } // completamente abierta
-        else { xOffset = 0; yOffset = 16; }                  // cerrada
+        if (frame == 0)      { xOffset = 192;  yOffset = 0;  }
+        else if (frame == 1) { xOffset = 224; yOffset = 0;  }
+        else                 { xOffset = 0;   yOffset = 32; }
         break;
 
     case 3: // derecha
-        if (frame == 0) { xOffset = 80; yOffset = 16; }     // medio abierta
-        else if (frame == 1) { xOffset = 96; yOffset = 16; } // completamente abierta
-        else { xOffset = 112; yOffset = 16; }                // cerrada
+        if (frame == 0)      { xOffset = 32;  yOffset = 32; }
+        else if (frame == 1) { xOffset = 64;  yOffset = 32; }
+        else                 { xOffset = 98;  yOffset = 32; }
         break;
     }
 
-    setPixmap(spriteSheet.copy(xOffset, yOffset, 32, 32).scaled(TILE_SIZE, TILE_SIZE )); // ← ahora bien escalado
-}*/
-void PacMan::actualizarSprite() {
-    int xOffset = 0;
-    int yOffset = 0;
-
-    switch (direccion) {
-    case 0: // arriba
-        xOffset = frame * 32;       // 0, 16, 32
-        yOffset = 0;
-        break;
-
-    case 1: // abajo
-        xOffset = (3 + frame) * 32; // 48, 64, 80
-        yOffset = 0;
-        break;
-
-    case 2: // izquierda
-        if (frame == 0)      { xOffset = 192;  yOffset = 0;  } // medio abierta (fila 1)
-        else if (frame == 1) { xOffset = 224; yOffset = 0;  } // muy abierta   (fila 1)
-        else                { xOffset = 0;   yOffset = 32; } // cerrada       (fila 2)
-        break;
-
-    case 3: // derecha
-        if (frame == 0)      { xOffset = 32;  yOffset = 32; } // medio abierta (fila 2)
-        else if (frame == 1) { xOffset = 64;  yOffset = 32; } // muy abierta   (fila 2)
-        else                { xOffset = 98; yOffset = 32; } // cerrada       (fila 2)
-        break;
-    }
-
-    // Se ajusta al tamaño visible del mapa (usualmente 32x32)
     setPixmap(spriteSheet.copy(xOffset, yOffset, 32, 32).scaled(TILE_SIZE, TILE_SIZE));
 }

@@ -4,33 +4,36 @@
 #include <QObject>
 #include <QGraphicsPixmapItem>
 #include <QKeyEvent>
-#include <QTimer>
 #include <QGraphicsScene>
+#include <QTimer>
+#include <QPixmap>
+#include "puntos.h"  // Para acceder a los puntos
 
 class PacMan : public QObject, public QGraphicsPixmapItem {
     Q_OBJECT
+
 public:
-    PacMan(QGraphicsScene* scene, int (*mapa)[19], int tileSize);
+    PacMan(QGraphicsScene* scene, int (*mapa)[19], Puntos* puntos, int tileSize);
     void keyPressEvent(QKeyEvent *event);
 
+signals:
+    void puntoComido();  // ← Señal emitida cuando se come un punto
 
 private slots:
     void mover();
 
 private:
-    QPixmap spriteSheet;
     QGraphicsScene* scene;
     int (*mapa)[19];
-    int TILE_SIZE;
-
-
-    int direccion; // 0: arriba, 1: abajo, 2: izquierda, 3: derecha
-    int frame;     // 0, 1, 2 para animación
-
+    Puntos* puntos;
+    const int TILE_SIZE;
+    int direccion;
+    int frame;
     QTimer* timer;
+    QPixmap spriteSheet;
 
-    void actualizarSprite();
     bool puedeMoverse(int dx, int dy);
+    void actualizarSprite();
 };
 
-#endif // PACMAN_H
+#endif

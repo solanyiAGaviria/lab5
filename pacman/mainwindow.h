@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "pacman.h"
+#include <QGraphicsTextItem>
 #include <QMainWindow>
 #include <QGraphicsView>
 #include <QGraphicsScene>
@@ -21,6 +22,9 @@ private:
     QGraphicsView *view;
     QGraphicsScene *scene;
     Mapa *mapa;
+    QGraphicsTextItem* textoScore;
+    int score;
+
 };
 
 #endif // MAINWINDOW_H

@@ -1,8 +1,6 @@
-// Modificaciones en mapa.cpp
 #include "mapa.h"
 #include <QBrush>
 #include <QGraphicsRectItem>
-
 
 Mapa::Mapa(QGraphicsScene *scene) : scene(scene) {
     puntos = new Puntos(scene, mapa, FILAS, COLUMNAS, TILE_SIZE);
@@ -14,6 +12,9 @@ int (*Mapa::getMapa())[19] {
     return mapa;
 }
 
+Puntos* Mapa::getPuntos() {
+    return puntos;
+}
 
 void Mapa::generarMapa() {
     for (int y = 0; y < FILAS; ++y) {
@@ -29,3 +30,4 @@ void Mapa::generarMapa() {
         }
     }
 }
+

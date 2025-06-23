@@ -25,11 +25,14 @@ void Puntos::generarPuntos() {
     }
 }
 
-void Puntos::eliminarPuntoEn(int x, int y) {
+bool Puntos::eliminarPuntoEn(int x, int y) {
     if (x >= 0 && x < COLUMNAS && y >= 0 && y < FILAS && puntos[y][x]) {
         scene->removeItem(puntos[y][x]);
         delete puntos[y][x];
         puntos[y][x] = nullptr;
+        return true; // ← Se eliminó un punto
     }
+    return false; // ← No había punto
 }
+
 

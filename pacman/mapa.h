@@ -12,6 +12,7 @@ public:
     Mapa(QGraphicsScene *scene);
     void generarMapa();
     int (*getMapa())[19]; // devuelve puntero al arreglo de 19 columnas
+    Puntos* getPuntos();
 
 
 private:

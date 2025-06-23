@@ -10,7 +10,8 @@ class Puntos {
 public:
     Puntos(QGraphicsScene *scene, int mapa[21][19], int filas, int columnas, int tileSize);
     void generarPuntos();
-    void eliminarPuntoEn(int x, int y);
+    bool eliminarPuntoEn(int x, int y);
+
 
 private:
     QGraphicsScene *scene;
